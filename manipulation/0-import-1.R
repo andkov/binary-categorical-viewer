@@ -107,9 +107,9 @@ ds1 <- melanoma %>%
   )
 
 # ---- inspect-data-1 ------
-melanoma %>% glimpse()
-melanoma %>% look_for()
-melanoma %>% explore::describe_all()
+ds1 %>% glimpse()
+ds1 %>% look_for()
+ds1 %>% explore::describe_all()
 # ---- table-1 -----------------------------------------------------------------
 
 
@@ -134,7 +134,8 @@ fit2 = melanoma %>%
 
 # ---- save-to-disk ------------------------------------------------------------
 # naming convention: step_id - step_name - cohort_id
-path_data_out <- "./data-unshared/derived/melanoma.rds"
+path_data_out <- "./data-unshared/derived/0-import-1.rds"
+ds1 %>% readr::write_rds(path_data_out)
 # ---- publish -----------------------------------------------------------------
 # naming convention: step_id - data_transfer_object - cohort_id
 # one report (.Rmd) per script (.R), unless report series
