@@ -1,4 +1,4 @@
-rm(list = ls(all.names = TRUE)) # Clear the memory of variables from previous run. 
+rm(list = ls(all.names = TRUE)) # Clear the memory of variables from previous run.
 #This is not called by knitr, because it's above the first chunk.
 cat("/014") # Clear the console
 
@@ -23,50 +23,20 @@ library(forcats)   # factors
 library(stringr)   # strings
 library(lubridate) # dates
 library(readxl)    # data import
-library(explore)   # for `describe_all()` 
+library(explore)   # for `describe_all()`
 library(scales)    # formatting
 library(labelled)  # labels - https://cran.r-project.org/web/packages/labelled/vignettes/intro_labelled.html
-library(rlang)     # tidy evaluations -  https://www.tidyverse.org/blog/2019/06/rlang-0-4-0/   
-# 
+library(rlang)     # tidy evaluations -  https://www.tidyverse.org/blog/2019/06/rlang-0-4-0/
+library(finalfit)  # modeling
+library(patchwork) # binding graphs together
 # ---- declare-globals ---------------------------------------------------------
-# ensure that the `prints` sub-folder exists (!). One folder per script.
-# folder name MUST match the name of the R script
-prints_folder <- paste0("./manipulation/prints/0-import-1/") 
-if(!file.exists(prints_folder)){
-  dir.create(file.path(prints_folder))
-}
-# Sets the default aesthetic feel for all graphs in the project.
-ggplot2::theme_set(
-  ggplot2::theme_bw(
-  )+
-    theme(
-      strip.background = element_rect(fill="grey95", color = NA)
-    )
-)
 
-# define URLs here, so that they can be recycled
-# Note FORWARD SLASHES(!!), copy-pasting from address line WILL need adjustment
-path_file1  <- "M:/Folder1/Folder2/Data.xlsx"
-path_file2  <- "M:/Folder1/Folder2/Data-group-1.csv"
-# path_files should be the last element of the chunk
 # ---- declare-functions -------------------------------------------------------
 # store script-specific function here
 
 # ---- load-data ---------------------------------------------------------------
-# import data from every sheet of a `*.xlsx` file
-sheet_names <- readxl::excel_sheets(path_file1) # to cycle through
-dto <- list() # empty shell to hold elements
-for(sheet_i in sheet_names){
-  # i <- sheet_names[1]
-  dto[[sheet_i]] <- readxl::read_xlsx(path_file, sheet = sheet_i)
-}
-# to isolate a given imported sheet in a tibble
-ds0 <- dto$`Sheet Name` %>% tibble::as_tibble()
+meldata <- boot::melanoma
 
-dto <- list() # to store data sets 
-dto[["dataset_name1"]] <- readxl::read_xlsx(path_file1, sheet = "Sheet Name 1")
-dto[["dataset_name2"]] <- readr::read_csv(path_file2, trim_ws = T)
-dto
 
 # minimize (if needed) and store a local copy for quick assess and development
 # dto %>% readr::write_rds("./data-unshared/derived/00-import-1-small.rds",compress = "xz")
@@ -76,8 +46,70 @@ dto
 
 
 # ---- tweak-data --------------------------------------------------------------
+library(tidyverse)
+library(finalfit)
+melanoma <- boot::melanoma %>%
+  mutate(sex.factor = factor(sex) %>%
+           fct_recode("Female" = "0",
+                      "Male"   = "1") %>%
+           ff_label("Sex"),
+
+         ulcer.factor = factor(ulcer) %>%
+           fct_recode("Present" = "1",
+                      "Absent"  = "0") %>%
+           ff_label("Ulcerated tumour"),
+
+         age  = ff_label(age,  "Age (years)"),
+         year = ff_label(year, "Year"),
+
+         status.factor = factor(status) %>%
+           fct_recode("Died melanoma"  = "1",
+                      "Alive" = "2",
+                      "Died - other" = "3") %>%
+           fct_relevel("Alive") %>%
+           ff_label("Status"),
+
+         t_stage.factor =
+           thickness %>%
+           cut(breaks = c(0, 1.0, 2.0, 4.0,
+                          max(thickness, na.rm=TRUE)),
+               include.lowest = TRUE)
+  )
+
+melanoma <- melanoma %>%
+  mutate(
+    t_stage.factor =
+      fct_recode(t_stage.factor,
+                 "T1" = "[0,1]",
+                 "T2" = "(1,2]",
+                 "T3" = "(2,4]",
+                 "T4" = "(4,17.4]") %>%
+      ff_label("T-stage")
+  )
+
+# 5-year mortality
+melanoma <- melanoma %>%
+  mutate(
+    mort_5yr =
+      if_else((time/365) < 5 &
+                (status == 1),
+              "Yes",          # then
+              "No") %>%       # else
+      fct_relevel("No") %>%
+      ff_label("5-year survival")
+  )
 
 
+ds1 <- melanoma %>%
+  as_tibble() %>%
+  mutate(
+
+  )
+
+# ---- inspect-data-1 ------
+melanoma %>% glimpse()
+melanoma %>% look_for()
+melanoma %>% explore::describe_all()
 # ---- table-1 -----------------------------------------------------------------
 
 
@@ -86,9 +118,23 @@ dto
 
 # ---- graph-2 -----------------------------------------------------------------
 
+
+# ---- model-1 -----------------------------------------------------------------
+# model to fit:
+# mort_5yr ~ sex.factor + ulcer.factor + status.factor + t_stage.factor
+
+# ---- model-2 -----------------------------------------------------------------
+library(finalfit)
+dependent <- "mort_5yr"
+explanatory <- c("ulcer.factor", "age", "sex.factor", "t_stage.factor")
+fit2 = melanoma %>%
+  finalfit(dependent, explanatory, metrics = TRUE)
+# ---- model-3 -----------------------------------------------------------------
+# ---- model-4 -----------------------------------------------------------------
+
 # ---- save-to-disk ------------------------------------------------------------
 # naming convention: step_id - step_name - cohort_id
-path_data_out <- "./data-unshared/derived/.../0-import-1.rds"
+path_data_out <- "./data-unshared/derived/melanoma.rds"
 # ---- publish -----------------------------------------------------------------
 # naming convention: step_id - data_transfer_object - cohort_id
 # one report (.Rmd) per script (.R), unless report series
