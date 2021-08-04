@@ -118,28 +118,30 @@ explore::describe_all(ds1)
 
 
 
+
+
 # ---- single-model ----------------
 
-# dependent <- "has_ea"
-# explanatory   <- c("employment_state","age_group", "sex","marital_status","hh_role")
-# explanatory_r <- c(                   "age_group", "sex","marital_status","hh_role" )
+dependent <- "mort_5yr"
+explanatory   <- c("sex","ulcer", "status","t_stage")
+explanatory_r <- c(      "ulcer", "status","t_stage")
 #
 # # # finalfit::finalfit(ds2,dependent, explanatory)
-# ls_model <- run_logistic_binary(ds2,dependent, explanatory)
-# ls_model_r <- run_logistic_binary(ds2,dependent, explanatory_r)
-# model <- ls_model$model
-# model_reduced <- ls_model_r$model
-# model %>% get_model_fit()
-# model %>% broom::tidy(exponentiate =T)
-# model %>% broom::glance()
-# # model %>% jtools::summ()
-# (model %>% sjPlot::plot_model() +
-#   labs(title = "Odds Ratios for taking EA after getting on IS" )+
-#     scale_y_log10(limits = c(.1,3)))%>%
-#   quick_save("full-model-estimates",width=6, height=4)
-# model %>% jtools::plot_summs()
-# model %>% jtools::plot_coefs()
-# model %>% gtsummary::tbl_regression() %>% print()
+ls_model <- run_logistic_binary(ds1,dependent, explanatory)
+ls_model_r <- run_logistic_binary(ds2,dependent, explanatory_r)
+model <- ls_model$model
+model_reduced <- ls_model_r$model
+model %>% get_model_fit()
+model %>% broom::tidy(exponentiate =T)
+model %>% broom::glance()
+# model %>% jtools::summ()
+(model %>% sjPlot::plot_model() +
+  labs(title = "Odds Ratios for taking EA after getting on IS" )+
+    scale_y_log10(limits = c(.1,3)))%>%
+  quick_save("full-model-estimates",width=6, height=4)
+model %>% jtools::plot_summs()
+model %>% jtools::plot_coefs()
+model %>% gtsummary::tbl_regression() %>% print()
 
 #
 # jtools::summ(model)
