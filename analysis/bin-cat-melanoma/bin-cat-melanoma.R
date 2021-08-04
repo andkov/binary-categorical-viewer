@@ -109,6 +109,9 @@ ds1 <- ds0 %>%
     ,"ulcer"= "ulcer_factor"
     ,"status" = "status_factor"
     ,"t_stage" = "t_stage_factor"
+  ) %>%
+  mutate(
+    person_oid = row_number()
   )
 # rm(ds0)
 # ---- tweak-data-2 --------------------------------------------------------------
@@ -123,25 +126,30 @@ explore::describe_all(ds1)
 # ---- single-model ----------------
 
 dependent <- "mort_5yr"
-explanatory   <- c("sex","ulcer", "status","t_stage")
-explanatory_r <- c(      "ulcer", "status","t_stage")
+
+# c("ulcer", "age", "sex", "t_stage")
+explanatory   <- c("ulcer", "age", "sex", "t_stage")
+explanatory_r <-c(          "age", "sex", "t_stage")
 #
 # # # finalfit::finalfit(ds2,dependent, explanatory)
 ls_model <- run_logistic_binary(ds1,dependent, explanatory)
-ls_model_r <- run_logistic_binary(ds2,dependent, explanatory_r)
+ls_model_r <- run_logistic_binary(ds1,dependent, explanatory_r)
 model <- ls_model$model
 model_reduced <- ls_model_r$model
+model %>% summary()
+model %>% get_rsquared();model_reduced %>% get_rsquared()
 model %>% get_model_fit()
 model %>% broom::tidy(exponentiate =T)
 model %>% broom::glance()
 # model %>% jtools::summ()
 (model %>% sjPlot::plot_model() +
-  labs(title = "Odds Ratios for taking EA after getting on IS" )+
-    scale_y_log10(limits = c(.1,3)))%>%
+  labs(title = "Odds Ratios" )+
+    # scale_y_log10( limits = c(.1,3)))%>%
+    scale_y_log10( ))%>%
   quick_save("full-model-estimates",width=6, height=4)
 model %>% jtools::plot_summs()
 model %>% jtools::plot_coefs()
-model %>% gtsummary::tbl_regression() %>% print()
+model %>% gtsummary::tbl_regression(exp=T) %>% print()
 
 #
 # jtools::summ(model)
