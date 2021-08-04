@@ -8,9 +8,9 @@ get_sample_uniques <- function(
   ,seed = 42
   ){
   # browser()
-  sampling_universe <- d %>% pull(.data[[var_name]]) 
+  sampling_universe <- d %>% pull(.data[[var_name]])
   if(uniques){
-    sampling_universe <- sampling_universe %>% unique() 
+    sampling_universe <- sampling_universe %>% unique()
   }
   x_out <- sample(
     x        = sampling_universe
@@ -27,8 +27,8 @@ get_sample_uniques <- function(
 # function to produce a frequency table between (upto) TWO categorical variables
 make_bi_freq_table <- function(
   d
-  , var1                # 1st categorical variable            
-  , var2=var1           # 2nd categorical variable                 
+  , var1                # 1st categorical variable
+  , var2=var1           # 2nd categorical variable
 ){
   # browser()
   # d <- ds1 # load the data set before testing the function
@@ -39,10 +39,10 @@ make_bi_freq_table <- function(
   if( ls_var_names[1][[1]] == ls_var_names[2][[1]] ){
     ls_var_names <- ls_var_names[-2]
   }
-  
+
   d1 <- d %>%
     # dplyr::group_by(.dots = unique(c(var1, var2)))%>% # simpler but depricated
-    dplyr::group_by(!!!rlang::syms(ls_var_names)) %>% 
+    dplyr::group_by(!!!rlang::syms(ls_var_names)) %>%
     dplyr::summarize(
       row_count = n()
       ,id_count = n_distinct(person_oid) # counts UNIUQE persons
@@ -55,21 +55,21 @@ make_bi_freq_table <- function(
     dplyr::group_by(.dots = var1) %>%
     dplyr::mutate(
       var1_count = sum(id_count, na.rm = T)
-      
+
       ,var1_prop = (var1_count/id_count_total)
       ,var12_prop = (id_count/var1_count)
-      # 
+      #
       ,var1_pct = scales::label_percent(accuracy = .1)(var1_prop)
       ,var12_pct = scales::label_percent(accuracy=.01)(var12_prop)
-    ) %>% 
+    ) %>%
     ungroup()
-  
+
   # ,pct_1 = scales::label_percent()(total_1/total)
   # ,pct_12 = scales::label_percent()(n_people/total_1)
-  # 
+  #
   n_total <-  d1 %>% pull(id_count_total) %>% unique()
   return(d1)
-}                           
+}
 # ds2 %>% make_bi_freq_table(var1="employment_state", var2="sex")
 # ds2 %>% make_bi_freq_table(var1="employment_state", var2="sex")
 # ds2 %>% make_bi_freq_table(var1="employment_state")
@@ -92,28 +92,28 @@ make_bi_freq_graph <- function(
   # d <- ds2
   # browser()
   d1 <- d  %>%
-    make_bi_freq_table(var1, var2) %>% 
+    make_bi_freq_table(var1, var2) %>%
     mutate_at(
       .vars = all_of(var1)
       ,.funs = ~factor(.data[[var1]])
-    ) %>% 
+    ) %>%
     mutate_at(
       .vars = all_of(var2)
       ,.funs = ~factor(.data[[var2]])
     )
   if(rev){
-    d1 <- d1 %>% 
+    d1 <- d1 %>%
       mutate_at(
         .vars = all_of(var1)
         ,.funs = ~fct_rev(.data[[var1]])
-        
+
       )
   }
-  
-  d2 <- d1 %>% filter(!is.na(.data[[var1]])) # drop empty factors 
-  
+
+  d2 <- d1 %>% filter(!is.na(.data[[var1]])) # drop empty factors
+
   n_total <-  d2 %>% pull(id_count) %>% unique()
-  
+
   g1 <- d2 %>%
     ggplot2::ggplot(ggplot2::aes_string(x =var1, y = "id_count", fill = var2 ))+
     ggplot2::geom_col(position = ggplot2::position_dodge(), alpha = .7, color = "black")+
@@ -127,14 +127,14 @@ make_bi_freq_graph <- function(
       , labels = comma
       # ,breaks =pretty_breaks()
       ,breaks = breaks_pretty(n=n_breaks)
-      
+
     )
   g1
   if(var1 == var2){
     g1 <- g1 +
       ggplot2::geom_text(ggplot2::aes_string(label = "var1_pct"),position = ggplot2::position_dodge(.9), hjust = -0.1, color = "black", size = 4)+
       ggplot2::labs(y = "Count", title = paste0("Frequency distribution of (",var1,")"))
-  }else{ 
+  }else{
     g1 <- g1 +
       ggplot2::geom_text(ggplot2::aes_string(label = "var12_pct"),position = ggplot2::position_dodge(.9)
                          # , vjust = -.5
@@ -142,8 +142,8 @@ make_bi_freq_graph <- function(
                          , color = "black", size = 4)
     g1 <- g1 + ggplot2::labs(y = "Number of unique respondents", title = paste0("Association between (",var1,") and (",var2,")"))
   }
-  
-  
+
+
   return(g1)
 }
 # How to use
@@ -159,10 +159,10 @@ person_row_count <- function(
 ){
   # d <- ds2
   # grouping_vars <- c("gender","category_group")
-  # 
+  #
   # group1 = "gender"
   # group2 = "category_group"
-  d0 <- d %>% make_bi_freq_table(var1, var2) 
+  d0 <- d %>% make_bi_freq_table(var1, var2)
   grouping_vars <- c(var1, var2)
   count_vars <- c(
     "row_count"
@@ -170,24 +170,24 @@ person_row_count <- function(
     ,"row_count_total"
     ,"id_count_total"
   )
-  d1 <- d0 %>% 
+  d1 <- d0 %>%
     mutate(
       row_count_total = sum(row_count) # unique rows
       ,rows_per_id = (row_count/id_count) %>% scales::number(accuracy = .001)
       ,total_rows_per_id = (row_count_total/id_count_total)
-    ) %>% 
+    ) %>%
     select(
-      c(grouping_vars, count_vars) %>% 
+      c(grouping_vars, count_vars) %>%
         unique() %>% # in case only ONE grouping var is passed
         all_of()
-    ) %>% 
+    ) %>%
     # to make large numbers more readable
     mutate_at(
       .vars = count_vars
       ,.funs = scales::comma
     )
   look_for(d1)
-  # make column headers more readable 
+  # make column headers more readable
   labelled::var_label(d1) <- list(
     row_count        = "Rows"
     ,id_count        = "OIDs"
@@ -208,29 +208,29 @@ run_contingency <- function(d,var1, var2){
   # d <- ds2
   # var1 <- "sex"
   # var2 <- "employment_state"
-  
+
   # d1 <- d %>% select(.data[[var1]], .data[[var2]]) %>% na.omit()
   # v1 <- d1 %>% select(.data[[var1]]) %>% mutate_all(., as.character) %>% pull()
   # v2 <- d1 %>% select(.data[[var2]]) %>% mutate_all(., as.character) %>% pull()
-  # 
-  d1 <- d %>% 
-    select(.data[[var1]], .data[[var2]]) %>% 
-    na.omit() %>% 
+  #
+  d1 <- d %>%
+    select(.data[[var1]], .data[[var2]]) %>%
+    na.omit() %>%
     mutate_all(., as.character) # to ensure factors and integers are treated as factors
-  
+
   # (crosstab <- table(v1,v2))
   (crosstab <- table(d1[[var1]], d1[[var2]]))
-  
+
   # Interpretations (min, max)
-  # contingency_c   - (0,1) - Misfit adjusted for sample size 
-  # cramer_v        - (0,1) - Strength of association (none to perfect) 
+  # contingency_c   - (0,1) - Misfit adjusted for sample size
+  # cramer_v        - (0,1) - Strength of association (none to perfect)
   # uncertainty_c   - (0,1) - Entropy/ given Y, what fraction of the bits of X can we predict?
   # kruskal_lambda  - (0,1) - Proportional Reduction in Error
-  
-  chisq.test(crosstab) %>% print() 
-  
+
+  chisq.test(crosstab) %>% print()
+
   # Contingency Coefficient Corrected - rescaled to be 0 to 1 (C_max is not bound by 1 and depends on dims(crosstab))
-  # measures the degree of association (from none to perfect), 
+  # measures the degree of association (from none to perfect),
   contingency_coef_corrected <- DescTools::ContCoef(crosstab, correct = TRUE)
   # Cramer's V Unbiased - (bias = lower N tends to overestimate effect)
   cramer_v_unbiased <- rcompanion::cramerV(crosstab, bias.correct = TRUE)
@@ -240,9 +240,9 @@ run_contingency <- function(d,var1, var2){
   # Proportional reduction in error - Goodman-Kruskal Lambda
   kruskal_lambda <- DescTools::Lambda(crosstab, direction = "column") # Count( var1) is independed. X(var1) predicts Y(var2)
   # for verification see https://rcompanion.org/handbook/H_10.html
-  
+
   # crosstab %>% DescTools::Assocs() # view a useful set of indices
-  
+
   lto <- list(
     "varnames"        = c("var1"=var1, "var2"=var2)
     ,"crosstab"       = crosstab
@@ -252,7 +252,7 @@ run_contingency <- function(d,var1, var2){
       ,"uncertainty_c"  = uncertainty_c
       ,"kruskal_lambda" = kruskal_lambda
     )
-    
+
   )
   return(lto)
 }
@@ -281,9 +281,9 @@ get_model_fit <- function(m, print=T){
         "\nChi-Square = ", mfit$chisquare,
         "\ndf = ", mfit$df,
         "\np-value = ", mfit$pvalue,"\n"
-    )  
+    )
   }
-  
+
   return(mfit)
 }
 
@@ -292,9 +292,10 @@ run_logistic_binary <- function(
   ,dependent   # Y, the criterion of the system
   ,explanatory # first chosen as focal, rest are control
 ){
-  # d <- ds2
-  # dependent   <- "has_ea" # var2
-  # explanatory  = c("age_group","sex","employment_state")
+  # browser()
+  # d <- ds1
+  # dependent   <- "mort_5yr" # var2
+  # explanatory  = c("sex","ulcer", "status","t_stage")
   # browser()
   # default colors to represent effect direction and significance
   pal_direction_significance <-  c(
@@ -308,10 +309,10 @@ run_logistic_binary <- function(
   )
   # Direction of Effect (Significance Level at %)
   # To help with meaningful colors of effect interpretation
-  
+
   # 1 - FORMULA
   eq_formula <- as.formula(paste0(dependent," ~ ", paste(explanatory, collapse = " + ") ) )
-  
+
   # 2 - MODEL
   model <- stats::glm(
     formula = eq_formula
@@ -319,34 +320,34 @@ run_logistic_binary <- function(
     ,family = binomial(link=logit) # alternative way
     ,data   = d
   )
-  
-  # 3 - PREDICTED 
+
+  # 3 - PREDICTED
   # generate model prediction for all unique combos of values on all predictors
   d_predicted_unique <- d %>%
     group_by(.dots = all_of(explanatory)) %>%
     summarize(count = n(),.groups="keep") %>%
-    ungroup() %>% 
+    ungroup() %>%
     dplyr::mutate(
       probability = predict(object = model, newdata = .,type = "response")
       # In other way, to verify the steps
       ,log_odds = predict(object = model, newdata = .)
       ,probability2 = plogis(log_odds) # same thing, double checke
     )
-  
 
-  
+
+
   # 4 - compute ROC and AUC model performance index
-  d_pred <- model %>% 
-    broom::augment() %>% 
+  d_pred <- model %>%
+    broom::augment() %>%
     mutate(
       probability = predict(object = model, newdata = .,type = "response")
-    ) %>% 
+    ) %>%
     select(all_of(c(dependent,"probability"))) # to minimize size
   # browser()
   roc_obj <- pROC::roc(d_pred[[dependent]], d_pred[["probability"]])
   rm(d_pred)
   auc_value <- pROC::auc(roc_obj) %>% as.numeric()
-  g_roc <-  roc_obj %>% 
+  g_roc <-  roc_obj %>%
     ggroc(color = "red")+
     # geom_abline(slope = 1, intercept = 1, color = "black")+
     geom_abline(slope = 1, intercept = 1, color = binary_colors["FALSE"])+
@@ -358,22 +359,22 @@ run_logistic_binary <- function(
       )
       ,color =  binary_colors["TRUE"]
     )
-  
+
   # 5 - format and augment the table of coefficients
   # to separate variable name from variable value in the summary(model) table
-  pattern_starts_with_explanatory <- paste0("^",explanatory, collapse = "|") 
+  pattern_starts_with_explanatory <- paste0("^",explanatory, collapse = "|")
   # EXTRACT ESTIMATES TABLE FROM MODEL OBJECT (glm)
   d_estimates  <-   model %>%
     broom::tidy(
       conf.int = TRUE
       ,exp     = TRUE # converts log-odds into odds-ratios (i.e. =exp(estimate))
-    ) %>% 
+    ) %>%
     mutate(
       conv_odds    = (estimate-1) # careful, this relies on broom::tidy(exp=TRUE)
       # otherwise: exp(estimate) - 1
-      ,var_name    = stringr::str_extract(term, pattern_starts_with_explanatory)   
-      ,value_level = stringr::str_remove( term, pattern_starts_with_explanatory) 
-    ) %>% 
+      ,var_name    = stringr::str_extract(term, pattern_starts_with_explanatory)
+      ,value_level = stringr::str_remove( term, pattern_starts_with_explanatory)
+    ) %>%
     # enhance with variables instrumental for graphing
     mutate(
       sign = cut(
@@ -399,10 +400,10 @@ run_logistic_binary <- function(
       ,sign_direction = ifelse(sign_direction %in% c("Increase  ", "Decrease  "), " ", sign_direction)
       ,sign_direction = fct_relevel(sign_direction,names(pal_direction_significance))
     )
-  
-  # 6 - MODEL FIT 
+
+  # 6 - MODEL FIT
   model_fit <- model %>% get_model_fit(print=F)
-  
+
   # LASTLY - assemble everything into a list object
   ls_out <- list() # create the shell for the object
   ls_out[["equation"]]  <- list(
@@ -413,18 +414,18 @@ run_logistic_binary <- function(
   ls_out[["model"]]     <- model
   ls_out[["predicted"]] <- d_predicted_unique
   ls_out[["roc"]]       <- list(
-    "roc"        = roc_obj 
+    "roc"        = roc_obj
     ,"roc_plot"  = g_roc
     ,"auc"       = auc_value
   )
   ls_out[["estimates"]] <- d_estimates
-  ls_out[["model_fit"]] <- model_fit  
+  ls_out[["model_fit"]] <- model_fit
   ls_out[["focal_factor"]] <- list(
     "levels" = levels(d[[explanatory[1]]])
   )
-  
-  
-  return(ls_out)  
+
+
+  return(ls_out)
 }
 # How to use
 # dependent   <- "has_ea" # var2
@@ -460,7 +461,7 @@ run_logistic_binary_model_comparison <- function(
     "reduced"  = d %>% run_logistic_binary(dependent, reduced_model_spec)
     ,"full"    = d %>% run_logistic_binary(dependent, full_model_spec)
   )
-  
+
   # Model comparison test
   chi_square_diff <- ls_model$full$model_fit$chisquare - ls_model$reduced$model_fit$chisquare
   df_diff         <- ls_model$full$model_fit$df - ls_model$reduced$model_fit$df
@@ -476,22 +477,22 @@ run_logistic_binary_model_comparison <- function(
     ,", R-Square  = ", numformat(r_squared_full, 3),", gained ",
     numformat(r_squared_diff,3)
   )
-  
+
   # Make model comparison table
-  t_reduced <- ls_model$reduced$model %>% tbl_regression(exponentiate=T) 
-  t_full    <- ls_model$full$model %>% tbl_regression(exponentiate=T) 
-  t_out <- 
+  t_reduced <- ls_model$reduced$model %>% gtsummary::tbl_regression(exponentiate=T)
+  t_full    <- ls_model$full$model %>% tbl_regression(exponentiate=T)
+  t_out <-
     gtsummary::tbl_merge(
       # tbls = list(t_reduced, t_full)
       tbls = list(t_full, t_reduced)
       ,tab_spanner = c("Full", "Reduced")
-    ) %>% 
+    ) %>%
     gtsummary::modify_caption(chi_squared_diff_test)
   ls_model[["compare"]] <- list(
     "test" = chi_squared_diff_test
     ,"table" = t_out
   )
-  
+
   return(ls_model)
 }
 # How to use
@@ -504,7 +505,7 @@ run_logistic_binary_model_comparison <- function(
 # the identical structure  for `ls_model$reduced`
 # ls_model$full # all from Reduced + 1 focal (exploratory[1])
 # ls_model$full$equation
-# ls_model$full$model 
+# ls_model$full$model
 # ls_model$full$model %>% summary()
 # ls_model$full$model %>% broom::tidy(exp=T)
 # ls_model$full$predicted # for all unique combos on explanatory vars
@@ -527,19 +528,19 @@ run_logistic_binary_model_comparison <- function(
 make_odds_ratios_graph <- function(
   ls_model
   ){
-   
+
   # Identify components
   l_model <- ls_model$full
   var_focal <- l_model$equation$explanatory[1]
   d_est     <- l_model$estimates
-  
-  g <- d_est %>% 
-    
-    filter(var_name==var_focal) %>% 
+
+  g <- d_est %>%
+
+    filter(var_name==var_focal) %>%
     mutate(
-      value_level = factor(value_level, levels = l_model$focal_factor$levels) %>% 
+      value_level = factor(value_level, levels = l_model$focal_factor$levels) %>%
         fct_rev()
-    ) %>% 
+    ) %>%
     ggplot(aes(x=conv_odds, y = value_level, fill = sign_direction ))+
     # ggplot(aes(x=or_prop, y = predictor, fill = sign_direction))+
     geom_col( color = "black", size = .3)+
@@ -552,7 +553,7 @@ make_odds_ratios_graph <- function(
     scale_x_continuous(expand = expansion(mult=c(.3,.3)), breaks = seq(-1,1,.1),
                        minor_breaks = seq(-2,3, .5))+
     scale_y_discrete(position = "right", drop = F)+
-    # 
+    #
     # facet_grid(predictor_group~outcome, scales = "free_y", space = "free")+
     # labs(
     #   title = "Factors affecting the outcome of the Income Support program"
@@ -572,7 +573,7 @@ make_odds_ratios_graph <- function(
 }
 # How to use
 # ls_model <- run_logistic_binary_model_comparison(ds2,"has_ea",c("age_group", "sex"))
-# g <- ls_model %>% 
+# g <- ls_model %>%
 #   make_odds_ratios_graph()
 # g
 # View relationship between two categorical variables as a set of bar graphs
@@ -591,20 +592,20 @@ make_bi_contingency_graph_components <- function(
   # n_breaks = 10
   # rev = FALSE
   # d <- ds2
-  
-  
+
+
   d1 <- d  %>%
-    make_bi_freq_table(var1, var2) %>% 
+    make_bi_freq_table(var1, var2) %>%
     mutate_at(
       .vars = all_of(var1) # factorize regardless of type
       ,.funs = ~factor(.data[[var1]])
-    ) %>% 
+    ) %>%
     mutate_at(
       .vars = all_of(var2) # factorize regardless of type
       ,.funs = ~factor(.data[[var2]])
     )
   if(rev){
-    d1 <- d1 %>% 
+    d1 <- d1 %>%
       mutate_at(
         .vars = all_of(var1)
         ,.funs = ~fct_rev(.data[[var1]])
@@ -613,7 +614,7 @@ make_bi_contingency_graph_components <- function(
   # browser()
   d2 <- d1 %>% na.omit()
   n_total <-  d2 %>% pull(id_count) %>% sum()
-  
+
   g0 <- d2 %>%
     ggplot2::ggplot(ggplot2::aes_string(x =var1, y = "id_count", fill = var2 ))+
     # ggplot2::geom_col(position = ggplot2::position_stack(), alpha = .7, color = "black")+
@@ -627,9 +628,9 @@ make_bi_contingency_graph_components <- function(
       labels = comma
       # ,breaks =pretty_breaks()
       ,breaks = breaks_pretty(n=n_breaks)
-    ) 
+    )
   # g1
-  g1 <- g0 +  
+  g1 <- g0 +
     ggplot2::geom_col(position = ggplot2::position_stack(), alpha = .7, color = "black")+
     theme(
       # axis.title.y = element_blank()
@@ -641,7 +642,7 @@ make_bi_contingency_graph_components <- function(
       y = "Count"
     )
   # g2
-  g2 <- g0 +  
+  g2 <- g0 +
     theme(
       # axis.title.y = element_blank()
       # ,axis.text.y = element_text(hjust = -0)
@@ -652,25 +653,25 @@ make_bi_contingency_graph_components <- function(
       y = "Percent"
     )
   # g3
-  t1 <- d %>% run_contingency(var1, var2) # X(var1) predicts 
+  t1 <- d %>% run_contingency(var1, var2) # X(var1) predicts
   t1$crosstab %>% DescTools::Assocs()
   v_chitest <- t1$crosstab %>% chisq.test() %>% broom::tidy()
   chi_test_result <- paste0(
     "Chi-Squared = ", comma(v_chitest$statistic, accuracy = .1),
-    ", df = ", v_chitest$parameter, 
+    ", df = ", v_chitest$parameter,
     ", p-value < ", comma(v_chitest$p.value, accuracy = .0001)
   )
   # t1
   index_name <- c(
-    "contingency_c"     = "Contingency\nCoefficient"      
-    ,"cramer_v"         = "Cramer's\n V"  
-    ,"kruskal_lambda"   = "Kruskal\n Lambda"        
-    ,"uncertainty_c"    = "Uncertainty\n/ Entropy"       
+    "contingency_c"     = "Contingency\nCoefficient"
+    ,"cramer_v"         = "Cramer's\n V"
+    ,"kruskal_lambda"   = "Kruskal\n Lambda"
+    ,"uncertainty_c"    = "Uncertainty\n/ Entropy"
   )
   t1$test_values
-  d_test <- t1$test_values %>% 
-    as_tibble() %>% 
-    pivot_longer(names_to = "measure_name", values_to = "value", cols = names(.)) %>% 
+  d_test <- t1$test_values %>%
+    as_tibble() %>%
+    pivot_longer(names_to = "measure_name", values_to = "value", cols = names(.)) %>%
     mutate(
       measure_name = factor(
         measure_name
@@ -678,8 +679,8 @@ make_bi_contingency_graph_components <- function(
         ,labels = index_name
       )
     )
-  
-  g3 <- d_test %>% 
+
+  g3 <- d_test %>%
     ggplot(aes(x=measure_name, y = value, fill = measure_name))+
     geom_col(alpha = .7, color = "black")+
     geom_text(
@@ -688,14 +689,14 @@ make_bi_contingency_graph_components <- function(
       # ,size = 8
     )+
     scale_y_continuous(
-      
+
       # limits = c(0,.5)
       # breaks = seq(0,1,.1)
       # ,minor_breaks = seq(0,1,.05)
       expand=ggplot2::expansion(mult = c(0,.3))
       ,labels = RemoveLeadingZero
-      
-    )+ 
+
+    )+
     # scale_x_discrete(
     #   position="top"
     # )+
@@ -714,9 +715,9 @@ make_bi_contingency_graph_components <- function(
            "Direction (C|R): (",var1,") predicts (",var2,")\n"
            ,chi_test_result
          )
-    ) 
+    )
   g3
-  
+
   return(list( "stack"=g1, "fill" = g2, "measures" = g3))
 }
 # How to use
@@ -738,15 +739,15 @@ make_bi_contingency_graph <- function(
   # var2 = "sex"
   # Assemble the final display
   # ds3 %>% make_bi_contingency_graph("has_ea")
-  
-  
-  
+
+
+
   ls_graph <- d %>% make_bi_contingency_graph_components(var1,var2)
-  
+
   p1 <- ls_graph$stack
   p2 <- ls_graph$fill
   p3 <- ls_graph$measures
-  
+
   # store the legend to share later
   legend <- cowplot::get_legend(
     p2 +
@@ -763,7 +764,7 @@ make_bi_contingency_graph <- function(
     ,rel_widths = c(.35,.35, .3)
   )
   # Title to share
-  title <- cowplot::ggdraw() + 
+  title <- cowplot::ggdraw() +
     cowplot::draw_label(
       "Assossiation between two categorical variables",
       fontface = 'bold',
@@ -776,7 +777,7 @@ make_bi_contingency_graph <- function(
       # so title is aligned with left edge of first plot
       plot.margin = margin(0, 0, 0, 0)
     )
-  
+
   plot_row <- cowplot::plot_grid(
     title
     ,combined_plot
@@ -784,7 +785,7 @@ make_bi_contingency_graph <- function(
     ,ncol = 1
     # rel_heights values control vertical title margins
     ,rel_heights = c(0.1, 1)
-    
+
   )+
     theme(
       plot.background =element_rect(fill = "white", color = "white")
@@ -793,7 +794,7 @@ make_bi_contingency_graph <- function(
   # plot_row %>% quick_save("0-combined-1.jpg",width = 10, height = 3)
 }
 # How to use
-# ds2 %>% 
+# ds2 %>%
 #   make_bi_contingency_graph("age_group","has_ea") %>%
 #   # make_bi_contingency_graph("has_ea","age_group") %>%  # keep "outcome" binary for now
 #   quick_save("0-combined-1",width = 10, height = 3)
@@ -802,7 +803,7 @@ make_bi_contingency_graph <- function(
 # ---- To Rule Them All ---------------
 
 get_bi_test_objects <- function(
-  d 
+  d
   ,dependent
   ,explanatory # the first will be treated as focal
   ,clear_cache = FALSE
@@ -818,7 +819,7 @@ get_bi_test_objects <- function(
   # to save the model file to cache for easier graphing later
   model_name <- paste0(c(dependent, explanatory), collapse = "-")
   model_path <- paste0(data_cache_folder,model_name,".rds")
-  
+
   # delete cache file if exisits
   if(clear_cache==TRUE){
     # testit::assert("File for this model does not exist", file.exists(model_path))
@@ -830,8 +831,8 @@ get_bi_test_objects <- function(
     ls_model    <- ds2 %>% run_logistic_binary_model_comparison(var2, explanatory)
     # ls_crosstab <- ds2 %>% run_contingency("has_ea","age_group")
     ls_crosstab <- ds2 %>% run_contingency(var2,var1)
-    # ls_bi_graph <- ds2 %>%  make_bi_contingency_graph_components(var1          , var2=) 
-    ls_bi_graph <- ds2 %>%  make_bi_contingency_graph_components(var1=var1, var2=var2) 
+    # ls_bi_graph <- ds2 %>%  make_bi_contingency_graph_components(var1          , var2=)
+    ls_bi_graph <- ds2 %>%  make_bi_contingency_graph_components(var1=var1, var2=var2)
     dto <- list(
       "ls_model" = ls_model
       ,"ls_crosstab" = ls_crosstab
@@ -842,8 +843,8 @@ get_bi_test_objects <- function(
     readr::write_rds(dto, model_path)
   }else{
     testit::assert("File for this model does not exist", file.exists(model_path))
-    dto <- readr::read_rds(model_path)    
-    
+    dto <- readr::read_rds(model_path)
+
   }
   return(dto)
   # Components we'll need for display A
@@ -856,14 +857,14 @@ get_bi_test_objects <- function(
 # data objects
 # How to use
 # dto <- get_bi_test_objects(
-#   d 
+#   d
 #   ,dependent    = "has_ea"
 #   ,explanatory = c("age_group","sex")
 #   ,cache = T
 # )
 # Produces
 # dto$
-  
+
   make_bi_test_output_A <- function(
     dto # made by get_bi_test_object
     ,d
@@ -877,7 +878,7 @@ get_bi_test_objects <- function(
     p4 <- dto$ls_bi_graph$measures # Measures of association
     p5 <- dto$ls_model$full$roc$roc_plot # ROC plot
     # p6 <- dto$ls_model$compare$estimate_plot
-    
+
     var1 <- dto$ls_crosstab$varnames[["var1"]]
     var2 <- dto$ls_crosstab$varnames[["var2"]]
     p7 <- d %>% make_bi_freq_graph(var1, var2,n_breaks = 4)
@@ -891,22 +892,22 @@ get_bi_test_objects <- function(
         theme(
           legend.position = "top"
           ,legend.title = element_text(size = 16)
-          
+
         )
     )
-    
+
     ### - First row of Display A : three horizontal bar-plots
     ### - Counts + Percent + Change in Odds
     top_row_effects <- cowplot::plot_grid(
-      p1 + 
+      p1 +
         labs(title="Person Count", y = NULL)+
         theme(
-          legend.position = "none" 
+          legend.position = "none"
           ,axis.title.y = element_blank()
           ,plot.title.position = "panel"
           ,plot.title = element_text(hjust = .5)
         )
-      
+
       ,p2 +
         labs(title="Group Percent", y = NULL)+
         theme(
@@ -915,7 +916,7 @@ get_bi_test_objects <- function(
           ,axis.ticks.y = element_blank()
           ,plot.title = element_text(hjust = .5)
         )
-      ,p3 + 
+      ,p3 +
         labs(title="Change in Odds", x = NULL)+
         theme(
           legend.position = "none"
@@ -927,12 +928,12 @@ get_bi_test_objects <- function(
       ,rel_widths = c(.35,.35, .3)
     )
     # top_row_effects
-    
-   
-    
+
+
+
     second_row_performance <- cowplot::plot_grid(
       plot.new()
-      ,p4 + 
+      ,p4 +
         labs(
           y = "Measures\nof\nAssociation"
         )+
@@ -943,14 +944,14 @@ get_bi_test_objects <- function(
       ,nrow = 1
       ,rel_widths = c(.2,.6,.4)
     )
-    
+
     third_row_bi_graphs <- cowplot::plot_grid(
       p7
       ,p8
       ,nrow=1
       ,rel_widths = c(.5, .5)
     )
-    
+
     title_final <- cowplot::ggdraw()+cowplot::draw_label(dto$ls_model$full$equation)
     caption_final <- cowplot::ggdraw()+cowplot::draw_label(dto$ls_model$compare$test)
     final_plot <- cowplot::plot_grid(
@@ -963,7 +964,7 @@ get_bi_test_objects <- function(
        ,ncol = 1
       # rel_heights values control vertical title margins
       ,rel_heights = c(.1, .1, 1, .6,.2, .6)
-      
+
     )+
       theme(
         plot.background =element_rect(fill = "white", color = "white")
@@ -982,18 +983,18 @@ get_bi_test_objects <- function(
       limitsize = FALSE,
       ...
     )
-    
+
     return(final_plot)
-    
-  
-    
+
+
+
   }
 # How to use
 # gA <- dto %>% make_bi_test_output_A()
 
 
   make_bi_test_output_B <- function(dto){
-    
+
     table_plot_path <- paste0(prints_folder,dto$model_name,".png" )
     dto$ls_model$compare$table %>%    # build gtsummary table
       as_gt() %>%             # convert to gt table
