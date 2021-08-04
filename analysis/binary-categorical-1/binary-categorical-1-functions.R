@@ -205,9 +205,9 @@ person_row_count <- function(
 
 # Input = two categorical variables, var2 - used as dependent
 run_contingency <- function(d,var1, var2){
-  # d <- ds2
+  # d <- ds1
   # var1 <- "sex"
-  # var2 <- "employment_state"
+  # var2 <- "ulcer"
 
   # d1 <- d %>% select(.data[[var1]], .data[[var2]]) %>% na.omit()
   # v1 <- d1 %>% select(.data[[var1]]) %>% mutate_all(., as.character) %>% pull()
@@ -585,8 +585,8 @@ make_bi_contingency_graph_components <- function(
   ,n_breaks = 5       # number of labeled values on horizontal axis
   ,rev      = TRUE    # reverse the color gradient
 ){
-  # var1 = "age_group"
-  # var2 = "has_ea"
+  # var1 = "sex"
+  # var2 = "ulcer"
   # # var2 = var1
   # voption="plasma"
   # n_breaks = 10
