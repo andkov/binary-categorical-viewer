@@ -1,8 +1,9 @@
+library(ggplot2)
 # sets the aesthetic palette applied to all graphs in the project
 ggplot2::theme_set(
   ggplot2::theme_bw(
   )+
-    theme(
+    ggplot2::theme(
       strip.background = element_rect(fill="grey95", color = NA)
     )
 )
@@ -28,7 +29,7 @@ quick_save <- function(g,name,...){
 # print names and associated lables of variables (if attr(.,"label)) is present
 names_labels <- function(ds){
   dd <- as.data.frame(ds)
-  
+
   nl <- data.frame(matrix(NA, nrow=ncol(dd), ncol=2))
   names(nl) <- c("name","label")
   for (i in seq_along(names(dd))){
@@ -44,7 +45,7 @@ names_labels <- function(ds){
 # names_labels(ds=oneFile)
 
 # adds neat styling to your knitr table
-neat <- function(x, output_format = "html"){ 
+neat <- function(x, output_format = "html"){
   # knitr.table.format = output_format
   if(output_format == "pandoc"){
     x_t <- knitr::kable(x, format = "pandoc")
@@ -59,16 +60,16 @@ neat <- function(x, output_format = "html"){
         full_width = F,
         position = "left"
       )
-  } 
+  }
   return(x_t)
 }
 # ds %>% distinct(id) %>% count() %>% neat(10)
 
 # adds a formated datatable
 neat_DT <- function(x, filter_="top",...){
-  
+
   xt <- x %>%
-    as.data.frame() %>% 
+    as.data.frame() %>%
     DT::datatable(
       class   = 'cell-border stripe'
       ,filter  = filter_
