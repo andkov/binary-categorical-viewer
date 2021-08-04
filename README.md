@@ -1,6 +1,10 @@
 # quick-start
 Provides a quick start into a basic data analysis project
 
+# Target 1  
+![target 1](libs/images/target-1.png)  
+
+
 # References and Useful materials
 
 - [Visualizing Multivariate Categorical Data](http://www.sthda.com/english/articles/32-r-graphics-essentials/129-visualizing-multivariate-categorical-data/) - Some ideas about visualizing contingency tables - by STHDA    
