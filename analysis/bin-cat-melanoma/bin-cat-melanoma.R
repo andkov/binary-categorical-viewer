@@ -79,42 +79,37 @@ source("./analysis/binary-categorical-1/binary-categorical-1-functions.R")
 ds0 %>% names_labels() %>% select(name)
 look_for(ds0)
 # ---- column-labels -----------------------------------------------------------
-OuhscMunge::column_rename_headstart(ds0 %>%  slice(1:100))
+OuhscMunge::column_rename_headstart(ds0 ) # to help getting started
 # white list of project scope (included as needed)
 variables_labels_focus <- c(
-  "person_oid"                             = `person_oid`,
-  "marital_status"                         = `marital_status`,
-  "immigrant_flag"                         = `immigrant_flag`,
-  "visible_minority_flag"                  = `visible_minority_flag`,
-  "highest_education_level"                = `highest_education_level`,
-  "disability_flag"                        = `disability_flag`,
-  "period_start"                           = `period_start`,
-  "period_end"                             = `period_end`,
-  "is_duration"                            = `is_duration`,
-  "has_ea_ever"                            = `has_ea_ever`,
-  "obs_assessment_date"                    = `obs_assessment_date`,
-  # "newvars____"                            = `newvars_______`,
-  "is_episode_count"                       = `is_episode_count`,
-  "is_episode"                             = `is_episode`,
-  "single_episode"                         = `single_episode`,
-  "hh_role"                                = `hh_role`,
-  "head_of_hh"                             = `head_of_hh`,
-  "service_id"                             = `service_id`,
-  "from_is_to_ea"                          = `from_is_to_ea`,
-  "has_ea"                                 = `has_ea`,
-  "sex"                                    = `sex`,
-  "employment_state"                       = `employment_state`,
-  "age_group"                              = `age_group`
+  "time"           = "time",
+  # "status"         = "status",
+  # "sex"            = "sex",
+  "age"            = "age",
+  "year"           = "year",
+  # "thickness"      = "thickness",
+  # "ulcer"          = "ulcer",
+  "sex_factor"     = "sex_factor",
+  "ulcer_factor"   = "ulcer_factor",
+  "status_factor"  = "status_factor",
+  "t_stage_factor" = "t_stage_factor",
+  "mort_5yr"       = "mort_5yr"
 )
 variables_in_focus <- names(variables_labels_focus)
 
 # ---- tweak-data-1 --------------------------------------------------------------
-glimpse(ds0)
-look_for(ds0)
+glimpse(ds1)
+look_for(ds1)
 explore::describe_all(ds0)
 
 ds1 <- ds0 %>%
-  filter(single_episode)
+  select(variables_in_focus) %>%
+  rename(
+    "sex" = "sex_factor"
+    ,"ulcer"= "ulcer_factor"
+    ,"status" = "status_factor"
+    ,"t_stage" = "t_stage_factor"
+  )
 # rm(ds0)
 # ---- tweak-data-2 --------------------------------------------------------------
 glimpse(ds1)
@@ -122,17 +117,7 @@ look_for(ds1)
 explore::describe_all(ds1)
 
 
-dev_sample <- ds1 %>% get_sample_uniques(2000, "person_oid")
-ds2 <- ds1 %>%
-  filter(!age_group == "UNKNOWN") %>%
-  # filter(person_oid %in% dev_sample) %>%
-  mutate(
-    age_group = fct_drop(age_group)
-  )
-rm(ds1)
-glimpse(ds2)
-look_for(ds2)
-explore::describe_all(ds2)
+
 # ---- single-model ----------------
 
 # dependent <- "has_ea"
