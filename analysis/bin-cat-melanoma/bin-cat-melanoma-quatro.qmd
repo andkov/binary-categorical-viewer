@@ -1,0 +1,169 @@
+---
+title: "Bin-Cat Melanoma Example"
+format:
+  html:
+    theme: default
+    toc: true
+    toc_float: yes
+    code_folding: show
+    highlight: tango
+editor_options: 
+  chunk_output_type: console
+---
+
+
+<!--  Set the working directory to the repository's base directory; this assumes the report is nested inside of two directories.-->
+```{r setup, echo=F, message=F, results = 'hide'}
+cat("Working directory: ", getwd()) # turn on to test the location
+# if the line above generates the project root, re-map by selecting 
+# Session --> Set Working Directory --> To Source File location
+library(knitr)
+opts_knit$set(root.dir='../../')  #Don't combine this call with any other chunk -especially one that uses file paths.
+```
+
+
+```{r set_options, echo=F}
+# cat("Working directory: ", getwd()) # turn on to test the location
+report_render_start_time <- Sys.time()
+# set options shared by all chunks
+knitr::opts_chunk$set(
+  results      = 'show',
+  message      = FALSE,
+  warning      = FALSE,
+  comment      = NA,
+  tidy         = FALSE,
+  # dpi        = 400, # dots per inch,
+  # out.width  = "650px", # pixels, this affects only the markdown, not the underlying png file.  The height will be scaled appropriately.
+  fig.width    = 6, # inches
+  fig.height   = 4, # inches
+  fig.path     = 'figure-png-com/' # where figures are stored
+)
+echo_chunks    <- FALSE #Toggle for debugging.
+message_chunks <- FALSE #Toggle for debugging.
+options(width=100) # number of characters to display in the output (dflt = 80)
+# setwd("C:/Users/koval/Documents/GitHub/andkov/binary-categorical-viewer/")
+```
+# Environment
+
+```{r load-sources}
+source("./scripts/common-functions.R")
+source("./scripts/graphing/graph-presets.R")
+source("./analysis/binary-categorical-1/binary-categorical-1-functions.R")
+```
+
+```{r load-packages}
+library(magrittr)  # pipes
+library(dplyr)     # data wrangling
+library(ggplot2)   # graphs
+library(janitor)   # tidy data
+library(tidyr)     # data wrangling
+library(forcats)   # factors
+library(stringr)   # strings
+library(lubridate) # dates
+library(readxl)    # for import
+library(explore)   # for describe_all()
+library(scales)    # formatting
+library(rlang)     # tidy evals - see https://edwinth.github.io/blog/dplyr-recipes/ and
+library(labelled)  # labels - see https://cran.r-project.org/web/packages/labelled/vignettes/intro_labelled.html
+library(gtsummary) # tables for regression
+library(gt)        # tables
+library(pROC)      # ROC curve calculation, `ggroc()`
+
+```
+
+
+```{r declare-globals}
+ggplot2::theme_set(
+  ggplot2::theme_bw(
+  )+
+    theme(
+      strip.background = element_rect(fill="grey95", color = NA)
+    )
+)
+
+
+# default colors to represent effect direction and significance
+pal_sign_dir <-  c(
+  "Increase (99%)"   = "#2b8cbe"
+  ,"Increase (95%)"  = "#7bccc4"
+  ,"Increase (90%)"  = "#bae4bc"
+  ,"Not Significant" = "NA"
+  ,"Decrease (90%)"  = "#fdcc8a"
+  ,"Decrease (95%)"  = "#fc8d59"
+  ,"Decrease (99%)"  = "#d7301f"
+)
+# Direction of Effect (Significance Level at %)
+# To help with meaningful colors of effect interpretation
+
+# Establish the folder for printing plots
+prints_folder <- paste0("./analysis/bin-cat-melanoma/prints-1/")
+if(!file.exists(prints_folder)){dir.create(file.path(prints_folder))}
+
+# Establish the folder for data cache
+data_cache_folder <- paste0("./data-unshared/derived/bin-cat-melanoma/")
+if(!file.exists(data_cache_folder)){dir.create(file.path(data_cache_folder))}
+
+path <- "data-unshared/derived/0-import-1.rds" # data source, see ellis in ./manipulation
+```
+
+```{r load-data}
+# ds0 <- readr::read_rds(paste0("../../",path))
+ds0 <- readr::read_rds(path)
+source("./analysis/binary-categorical-1/binary-categorical-1-functions.R")
+```
+
+```{r inspect-data}
+ds0 %>% names_labels() %>% select(name)
+look_for(ds0)
+```
+
+
+```{r column-labels}
+OuhscMunge::column_rename_headstart(ds0 ) # to help getting started
+# white list of project scope (included as needed)
+variables_labels_focus <- c(
+  "time"           = "time",
+  # "status"         = "status",
+  # "sex"            = "sex",
+  "age"            = "age",
+  "year"           = "year",
+  # "thickness"      = "thickness",
+  # "ulcer"          = "ulcer",
+  "sex_factor"     = "sex_factor",
+  "ulcer_factor"   = "ulcer_factor",
+  "status_factor"  = "status_factor",
+  "t_stage_factor" = "t_stage_factor",
+  "mort_5yr"       = "mort_5yr"
+)
+variables_in_focus <- names(variables_labels_focus)
+```
+
+```{r tweak-data-1}
+glimpse(ds0)
+look_for(ds0)
+explore::describe_all(ds0)
+
+ds1 <- ds0 %>%
+  select(variables_in_focus) %>%
+  rename(
+    "sex" = "sex_factor"
+    ,"ulcer"= "ulcer_factor"
+    ,"status" = "status_factor"
+    ,"t_stage" = "t_stage_factor"
+  ) %>%
+  mutate(
+    person_oid = row_number()
+  )
+# rm(ds0)
+```
+
+
+```{r tweak-data-2}
+glimpse(ds1)
+look_for(ds1)
+explore::describe_all(ds1)
+```
+
+
+
+
