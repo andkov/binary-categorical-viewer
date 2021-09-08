@@ -35,6 +35,9 @@ library(patchwork) # binding graphs together
 # store script-specific function here
 
 # ---- load-data ---------------------------------------------------------------
+# The subject of this example is the classic “Survival from Malignant Melanoma”
+# data, the same used in "R for Health Care" by  Harrison and Pius (2021)
+# https://argoshare.is.ed.ac.uk/healthyr_book/the-question-4.html
 meldata <- boot::melanoma
 
 
