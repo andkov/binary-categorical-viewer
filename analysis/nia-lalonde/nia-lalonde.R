@@ -73,13 +73,13 @@ ds1 <-
       ,age > 35 & age <= 45 ~ "36-45"
       ,age > 45 & age <= 55 ~ "46-55"
     )
-    ,re78_cat = case_when(
-      re78 >= 10000 ~ "high"
-      ,re78 < 10000 ~ "low"
+    ,re78_high = case_when(
+      re78 >= 10000 ~ TRUE
+      ,re78 < 10000 ~ FALSE
     )
   ) %>%
   mutate_at(
-    .vars = c("educ_cat","age_cat", "re78_cat")
+    .vars = c("educ_cat","age_cat")
     ,.funs = as_factor
   )
 ds1 %>% group_by(educ, educ_cat) %>% count() %>% print(n=nrow(.))
@@ -144,7 +144,7 @@ eq_formula
 #     ,n.keep            = 1
 #     ,n.grid            = 25
 #     ,ks.exact          = NULL
-#     ,version           = "gmb" # gmb, xboost, legacy
+#     ,version           = "gbm" # gmb, xboost, legacy
 #     # other
 #     ,verbose           = FALSE
 #   )
@@ -160,16 +160,16 @@ summary(ps1)
 # ------ estimate-effect -------------------------------------------------------
 compute_effect <- function(
   ps_object # object from ps() model
-  ,outcome_name = "re78_cat"
-  ,treatment_name = "treat"
-  ,outcome_dist_family = "gaussian" # gaussian for continuous, binomial for discreate outcomes
+  ,outcome_name #= "re78" # if categorical, must be binary logical
+  ,treatment_name #= "treat" # must be expressed as logical
+  ,outcome_dist_family  # gaussian for continuous, binomial for discreate outcomes
 ){
-  ps_object <- ps1
-  treatment_name = "treat"
-
-  outcome_name = "re78"
-  outcome_dist_family = "gaussian"
-  # outcome_name = "re78_cat"
+  # ps_object <- ps1
+  # treatment_name = "treat"
+  #
+  # outcome_name = "re78"
+  # outcome_dist_family = "gaussian"
+  # outcome_name = "re78_high"
   # outcome_dist_family = "binomial"
 
   d <-
@@ -193,28 +193,46 @@ compute_effect <- function(
     survey::svyglm(model_equation, design = design.ps, family = outcome_dist_family) %>%
     suppressWarnings()
   # summary(model)
+  # to capture nonlinear and interaction terms related to treatment
+
+
+  # extract the parameters from the effect model
   pattern_starts_with_explanatory <- paste0("^",treatment_name, collapse = "|")
-  d_estimates  <-
-    model %>%
-    broom::tidy(
-      conf.int = TRUE
-      # ,exp     = TRUE # converts log-odds into odds-ratios (i.e. =exp(estimate))
-    ) %>%
-    mutate(
-      # conv_odds    = (estimate-1) # careful, this relies on broom::tidy(exp=TRUE)
-      # otherwise: exp(estimate) - 1
-       var_name    = stringr::str_extract(term, pattern_starts_with_explanatory)
-      ,value_level = stringr::str_remove( term, pattern_starts_with_explanatory)
-    )
+  if(outcome_dist_family=="gaussian"){
+    d_estimates  <-
+      model %>%
+      broom::tidy(
+        conf.int = TRUE
+      ) %>%
+      mutate(
+        var_name     = stringr::str_extract(term, pattern_starts_with_explanatory)
+        ,value_level = stringr::str_remove( term, pattern_starts_with_explanatory)
+        ,conv_odds = NA # to match logistic output
+      )
+  }
+  if(outcome_dist_family=="binomial"){
+    d_estimates  <-
+      model %>%
+      broom::tidy(
+        conf.int = TRUE
+        ,exp     = TRUE # converts log-odds into odds-ratios (i.e. =exp(estimate))
+      ) %>%
+      mutate(
+        var_name     = stringr::str_extract(term, pattern_starts_with_explanatory)
+        ,value_level = stringr::str_remove( term, pattern_starts_with_explanatory)
+        ,conv_odds    = (estimate-1) # careful, this relies on broom::tidy(exp=TRUE)
+        # otherwise: exp(estimate) - 1
+      )
+  }
   d_estimates
 
   # applies propensity weights
   d_net <-
     d %>%
-    group_by(treat) %>%
+    group_by(!!rlang::sym(treatment_name)) %>%
     summarize(
-      unweighted = mean(treat, na.rm=T)
-      ,weighted = sum(treat*w, na.rm =T) / sum(w, na.rm = T)
+      unweighted = mean(!!rlang::sym(outcome_name), na.rm=T)
+      ,weighted  = sum(!!rlang::sym(outcome_name)*w, na.rm =T) / sum(w, na.rm = T)
     ) %>%
     ungroup() %>%
     mutate(
@@ -222,7 +240,7 @@ compute_effect <- function(
       ,wgt_diff = weighted - lag(weighted)
     )
 
-  d_result <-
+   d_result <-
     dplyr::left_join(
       d_net %>%
         select(
@@ -233,8 +251,9 @@ compute_effect <- function(
         )
       ,
       d_estimates %>%
-        filter(term==paste0(treatment_name,"TRUE")) %>%
-        # mutate(tx=TRUE) %>%
+        # select(1:2) %>%
+        mutate(term_focal = str_detect(term, paste0("^",treatment_name,".?+"))) %>%
+        filter(term_focal) %>%
         mutate(!!rlang::sym(treatment_name):=TRUE) %>%
         select(!!rlang::sym(treatment_name),conv_odds,p.value)
       ,by = treatment_name
@@ -242,17 +261,19 @@ compute_effect <- function(
 
   d_result <-
     d_result %>%
-    left_join(outcome_n,by = "tx")%>%
+    left_join(outcome_n,by = treatment_name)%>%
     mutate(
       outcome = outcome_name
     ) %>%
-    select(outcome,outcome_n,tx, everything())
+    select( outcome,outcome_n, everything()) %>%
+    relocate("conv_odds",.after = "p.value")
   return(d_result)
 }
 # How to use
-# ps1 %>% compute_effect("emp_at_survey")
-# ps1 %>% compute_effect("employed_postprogram")
-# ps1 %>% compute_effect("social_assistance")
+ps1 %>% compute_effect("re78","treat","gaussian")
+ps1 %>% compute_effect("re78_high","treat","binomial")
+
+
 
 # ---- publish -----------------------------------------------------------------
 path <- "./analysis/nia-lalonde/nia-lalonde.Rmd"
