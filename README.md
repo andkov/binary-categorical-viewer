@@ -1,7 +1,11 @@
-# quick-start
-Provides a quick start into a basic data analysis project
+# Binary-Categorical View
 
-# Target 1  
+Custom functions to support model comparisons of multiple logistic regressions.
+
+# Target Information Display
+
+The following display of information is the key product of the functions. It structures model comparison and provides the indices to support formal statistical testing. 
+
 ![target 1](libs/images/target-1.png)  
 
 
