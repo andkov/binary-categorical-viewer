@@ -1,27 +1,6 @@
 # see https://www.tidyverse.org/blog/2019/06/rlang-0-4-0/
 # for details on using `.data[[]]` pronoun
-get_sample_uniques <- function(
-  d
-  ,sample_size=10
-  , var_name = "PERSON_OID"
-  , uniques = TRUE
-  ,seed = 42
-  ){
-  # browser()
-  sampling_universe <- d %>% pull(.data[[var_name]])
-  if(uniques){
-    sampling_universe <- sampling_universe %>% unique()
-  }
-  x_out <- sample(
-    x        = sampling_universe
-    ,size    = sample_size
-    ,replace = FALSE
-  )
-  return(x_out)
-}
-# How to use
-# a_sample <- ds2 %>% get_sample_uniques(sample_size =10, "person_oid")
-# a_sample <- ds2 %>% get_sample_uniques(10)
+
 
 # ---- contingency-table-views ----------------
 # function to produce a frequency table between (upto) TWO categorical variables
@@ -32,8 +11,8 @@ make_bi_freq_table <- function(
 ){
   # browser()
   # d <- ds1 # load the data set before testing the function
-  # var1 = "gender"
-  # var2 = "category_group"
+  # var1 = "sex"
+  # var2 = "t_stage"
   # to ensure only one variable is passed if univariate
   ls_var_names <- list(var1, var2)
   if( ls_var_names[1][[1]] == ls_var_names[2][[1]] ){
@@ -52,7 +31,8 @@ make_bi_freq_table <- function(
     dplyr::mutate(
       id_count_total = sum(id_count, na.rm =T)
     ) %>%
-    dplyr::group_by(.dots = var1) %>%
+    # dplyr::group_by(.dots = var1) %>%
+    dplyr::group_by(!!rlang::sym(var1)) %>%
     dplyr::mutate(
       var1_count = sum(id_count, na.rm = T)
 
@@ -60,7 +40,7 @@ make_bi_freq_table <- function(
       ,var12_prop = (id_count/var1_count)
       #
       ,var1_pct = scales::label_percent(accuracy = .1)(var1_prop)
-      ,var12_pct = scales::label_percent(accuracy=.01)(var12_prop)
+      ,var12_pct = scales::label_percent(accuracy=.1)(var12_prop)
     ) %>%
     ungroup()
 
@@ -150,58 +130,6 @@ make_bi_freq_graph <- function(
 # ds2 %>% make_bi_freq_graph(var1="sex", var2="employment_state")
 # ds2 %>% make_bi_freq_graph(var1="employment_state", var2="sex")
 
-# Function to view unique id vs unique rows (up to 2 variables)
-person_row_count <- function(
-  d
-  ,var1 = "gender"
-  ,var2 = var1
-  ,comma = TRUE
-){
-  # d <- ds2
-  # grouping_vars <- c("gender","category_group")
-  #
-  # group1 = "gender"
-  # group2 = "category_group"
-  d0 <- d %>% make_bi_freq_table(var1, var2)
-  grouping_vars <- c(var1, var2)
-  count_vars <- c(
-    "row_count"
-    ,"id_count"
-    ,"row_count_total"
-    ,"id_count_total"
-  )
-  d1 <- d0 %>%
-    mutate(
-      row_count_total = sum(row_count) # unique rows
-      ,rows_per_id = (row_count/id_count) %>% scales::number(accuracy = .001)
-      ,total_rows_per_id = (row_count_total/id_count_total)
-    ) %>%
-    select(
-      c(grouping_vars, count_vars) %>%
-        unique() %>% # in case only ONE grouping var is passed
-        all_of()
-    ) %>%
-    # to make large numbers more readable
-    mutate_at(
-      .vars = count_vars
-      ,.funs = scales::comma
-    )
-  look_for(d1)
-  # make column headers more readable
-  labelled::var_label(d1) <- list(
-    row_count        = "Rows"
-    ,id_count        = "OIDs"
-    ,id_count_total  = "Total OIDs"
-    ,row_count_total = "Total Rows"
-  )
-  look_for(d1)# testing
-  d_out <- d1
-  return(d_out)
-}
-# ds2 %>% person_row_count("sex")
-# ds2 %>% person_row_count("sex", "employment_state")
-# ds2 %>% make_bi_freq_table("is_episode_count")
-# ds2 %>% make_bi_freq_graph("is_episode_count")
 
 # Input = two categorical variables, var2 - used as dependent
 run_contingency <- function(d,var1, var2){
