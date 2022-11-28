@@ -6,7 +6,7 @@ Custom functions to support model comparisons of multiple logistic regressions.
 
 The following display of information is the key product of the functions. It structures model comparison and provides the indices to support formal statistical testing. 
 
-![target 1](libs/images/target-1.png)  
+![target 1](libs/images/target-1.jpg)  
 
 
 # References and Useful materials
