@@ -111,3 +111,4 @@ Desktop.ini
 #     2. reorganized and moved above this chunk (so it won't be confused with files added unintentionally).
 quick-start.Rproj
 data-private/derived/nia-lalonde/ps1.rds
+data-private/derived/bin-cat-melanoma/mort_5yr-ulcer-age-sex-t_stage.rds
