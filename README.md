@@ -1,4 +1,4 @@
-# Binary-Categorical View
+# Binary-Categorical Viewer
 
 Custom functions to support model comparisons of multiple logistic regressions.
 
