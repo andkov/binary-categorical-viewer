@@ -25,7 +25,7 @@ library(lubridate) # dates
 library(readxl)    # for import
 library(explore)   # for describe_all()
 library(scales)    # formatting
-library(rlang)     # tidy evals - see https://edwinth.github.io/blog/dplyr-recipes/ and 
+library(rlang)     # tidy evals - see https://edwinth.github.io/blog/dplyr-recipes/ and
 library(labelled)  # labels - see https://cran.r-project.org/web/packages/labelled/vignettes/intro_labelled.html
 library(gtsummary) # tables for regression
 library(gt)        # tables
@@ -66,17 +66,17 @@ prints_folder <- paste0("./analysis/binary-categorical-1/prints-1/")
 if(!file.exists(prints_folder)){dir.create(file.path(prints_folder))}
 
 # Establish the folder for data cache
-data_cache_folder <- paste0("./data-unshared/derived/binary-categorical-1/")
+data_cache_folder <- paste0("./data-private/derived/binary-categorical-1/")
 if(!file.exists(data_cache_folder)){dir.create(file.path(data_cache_folder))}
 
-path <- "data-unshared/derived/1-ellis-1.rds" # data source
+path <- "data-private/derived/1-ellis-1.rds" # data source
 # ---- load-data ---------------------------------------------------------------
 ds0 <- readr::read_rds(path)
 source("./analysis/binary-categorical-1/binary-categorical-1-functions.R")
 
 # ---- inspect-data ------------------------------------------------------------
 
-ds0 %>% names_labels() %>% select(name) 
+ds0 %>% names_labels() %>% select(name)
 look_for(ds0)
 # ---- column-labels -----------------------------------------------------------
 OuhscMunge::column_rename_headstart(ds0 %>%  slice(1:100))
@@ -113,7 +113,7 @@ glimpse(ds0)
 look_for(ds0)
 explore::describe_all(ds0)
 
-ds1 <- ds0 %>% 
+ds1 <- ds0 %>%
   filter(single_episode)
 # rm(ds0)
 # ---- tweak-data-2 --------------------------------------------------------------
@@ -123,12 +123,12 @@ explore::describe_all(ds1)
 
 
 dev_sample <- ds1 %>% get_sample_uniques(2000, "person_oid")
-ds2 <- ds1 %>% 
+ds2 <- ds1 %>%
   filter(!age_group == "UNKNOWN") %>%
   # filter(person_oid %in% dev_sample) %>%
   mutate(
     age_group = fct_drop(age_group)
-  ) 
+  )
 rm(ds1)
 glimpse(ds2)
 look_for(ds2)
@@ -138,7 +138,7 @@ explore::describe_all(ds2)
 # dependent <- "has_ea"
 # explanatory   <- c("employment_state","age_group", "sex","marital_status","hh_role")
 # explanatory_r <- c(                   "age_group", "sex","marital_status","hh_role" )
-# 
+#
 # # # finalfit::finalfit(ds2,dependent, explanatory)
 # ls_model <- run_logistic_binary(ds2,dependent, explanatory)
 # ls_model_r <- run_logistic_binary(ds2,dependent, explanatory_r)
@@ -150,13 +150,13 @@ explore::describe_all(ds2)
 # # model %>% jtools::summ()
 # (model %>% sjPlot::plot_model() +
 #   labs(title = "Odds Ratios for taking EA after getting on IS" )+
-#     scale_y_log10(limits = c(.1,3)))%>% 
+#     scale_y_log10(limits = c(.1,3)))%>%
 #   quick_save("full-model-estimates",width=6, height=4)
 # model %>% jtools::plot_summs()
 # model %>% jtools::plot_coefs()
 # model %>% gtsummary::tbl_regression() %>% print()
 
-# 
+#
 # jtools::summ(model)
 # jtools::plot_summs(model)
 # jtools::plot_summs(model,model_reduced, scale=TRUE, plot.distributions=T)
@@ -205,8 +205,8 @@ for(i in seq_along(explanatory)){
 # for(i in 1 ){
   # i <- 2
   explanatory_i <- c(explanatory[i],explanatory[-i])
-   
-  dto <- ds2 %>% 
+
+  dto <- ds2 %>%
     get_bi_test_objects(
       dependent    = dependent
       ,explanatory = explanatory_i
@@ -223,18 +223,18 @@ for(i in seq_along(explanatory)){
 dependent <- "has_ea"
 explanatory   <- c("employment_state","age_group", "sex","marital_status","hh_role")
 for(i in seq_along(explanatory)){
-  # i <- 1  
+  # i <- 1
   explanatory_i <- c(explanatory[i],explanatory[-i])
   model_name <- paste0(c(dependent,explanatory_i),collapse = "-")
   display_a <- paste0(prints_folder,model_name,".jpg")
   display_b <- paste0(prints_folder,model_name,".png")
  cat("\n##",i,"\n")
-  cat("\n")  
+  cat("\n")
  display_a %>% jpeg::readJPEG() %>% grid::grid.raster()
  cat("\n")
  # display_b %>% png::readPNG() %>% grid::grid.raster()
  # display_b %>% jpeg::readJPEG() %>% grid::grid.raster()
- cat("\n")  
+ cat("\n")
  }
 
 # ---- graph-1 -----------------------------------------------------------------
