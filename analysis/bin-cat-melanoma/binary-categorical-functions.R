@@ -5,9 +5,9 @@
 # ---- contingency-table-views ----------------
 # function to produce a frequency table between (upto) TWO categorical variables
 make_bi_freq_table <- function(
-  d
-  , var1                # 1st categorical variable
-  , var2=var1           # 2nd categorical variable
+    d
+    , var1                # 1st categorical variable
+    , var2=var1           # 2nd categorical variable
 ){
   # browser()
   # d <- ds1 # load the data set before testing the function
@@ -57,12 +57,12 @@ make_bi_freq_table <- function(
 # ds2 %>% make_bi_freq_table("sex","employment_state")
 # View relationship between two categorical variables as a set of bar graphs
 make_bi_freq_graph <- function(
-  d
-  ,var1                # 1st categorical variable
-  ,var2     = var1     # 2nd categorical variable
-  ,voption  ="plasma"  # a palette from {viridis} package
-  ,n_breaks = 10       # number of labeled values on horizontal axis
-  ,rev      = FALSE    # reverse the color gradient
+    d
+    ,var1                # 1st categorical variable
+    ,var2     = var1     # 2nd categorical variable
+    ,voption  ="plasma"  # a palette from {viridis} package
+    ,n_breaks = 10       # number of labeled values on horizontal axis
+    ,rev      = FALSE    # reverse the color gradient
 ){
   # var1 = "gender"
   # var1 = "is_episode_count"
@@ -104,9 +104,9 @@ make_bi_freq_graph <- function(
     ggplot2::coord_flip()+
     ggplot2::scale_y_continuous(
       expand=ggplot2::expansion(mult = c(0,.1))
-      , labels = comma
+      , labels = scales::comma_format()
       # ,breaks =pretty_breaks()
-      ,breaks = breaks_pretty(n=n_breaks)
+      ,breaks = scales::breaks_pretty(n=n_breaks)
 
     )
   g1
@@ -120,7 +120,7 @@ make_bi_freq_graph <- function(
                          # , vjust = -.5
                          ,hjust = -0.1
                          , color = "black", size = 4)
-    g1 <- g1 + ggplot2::labs(y = "Number of unique respondents", title = paste0("Association between (",var1,") and (",var2,")"))
+    g1 <- g1 + ggplot2::labs(y = "Number of respondents", title = paste0("Association between (",var1,") and (",var2,")"))
   }
 
 
@@ -218,9 +218,9 @@ get_model_fit <- function(m, print=T){
 }
 
 run_logistic_binary <- function(
-  d
-  ,dependent   # Y, the criterion of the system
-  ,explanatory # first chosen as focal, rest are control
+    d
+    ,dependent   # Y, the criterion of the system
+    ,explanatory # first chosen as focal, rest are control
 ){
   # browser()
   # d <- ds1
@@ -228,15 +228,15 @@ run_logistic_binary <- function(
   # explanatory  = c("sex","ulcer", "status","t_stage")
   # browser()
   # default colors to represent effect direction and significance
-  # pal_direction_significance <-  c( # turn on when absent from environment
-  #   "Increase (99%)"   = "#2b8cbe"
-  #   ,"Increase (95%)"  = "#7bccc4"
-  #   ,"Increase (90%)"  = "#bae4bc"
-  #   ,"Not Significant" = "NA"
-  #   ,"Decrease (90%)"  = "#fdcc8a"
-  #   ,"Decrease (95%)"  = "#fc8d59"
-  #   ,"Decrease (99%)"  = "#d7301f"
-  # )
+  pal_direction_significance <-  c( # turn on when absent from environment
+    "Increase (99%)"   = "#2b8cbe"
+    ,"Increase (95%)"  = "#7bccc4"
+    ,"Increase (90%)"  = "#bae4bc"
+    ,"Not Significant" = "NA"
+    ,"Decrease (90%)"  = "#fdcc8a"
+    ,"Decrease (95%)"  = "#fc8d59"
+    ,"Decrease (99%)"  = "#d7301f"
+  )
   # Direction of Effect (Significance Level at %)
   # To help with meaningful colors of effect interpretation
 
@@ -278,7 +278,7 @@ run_logistic_binary <- function(
   rm(d_pred)
   auc_value <- pROC::auc(roc_obj) %>% as.numeric()
   g_roc <-  roc_obj %>%
-    ggroc(color = "red")+
+    pROC::ggroc(color = "red")+
     # geom_abline(slope = 1, intercept = 1, color = "black")+
     geom_abline(slope = 1, intercept = 1, color = binary_colors["FALSE"])+
     geom_text(
@@ -377,10 +377,10 @@ run_logistic_binary <- function(
 # ls$model_fit
 
 run_logistic_binary_model_comparison <- function(
-  d # data tibble
-  ,dependent #= "has_ea"
-  ,explanatory #= c("age_group",'sex', "employment_state")
-  # the first will be used as focal
+    d # data tibble
+    ,dependent #= "has_ea"
+    ,explanatory #= c("age_group",'sex', "employment_state")
+    # the first will be used as focal
 ){
   # browser()
   full_model_spec    <- explanatory
@@ -410,7 +410,7 @@ run_logistic_binary_model_comparison <- function(
 
   # Make model comparison table
   t_reduced <- ls_model$reduced$model %>% gtsummary::tbl_regression(exponentiate=T)
-  t_full    <- ls_model$full$model %>% tbl_regression(exponentiate=T)
+  t_full    <- ls_model$full$model %>% gtsummary::tbl_regression(exponentiate=T)
   t_out <-
     gtsummary::tbl_merge(
       # tbls = list(t_reduced, t_full)
@@ -456,19 +456,19 @@ run_logistic_binary_model_comparison <- function(
 # Compare Odds Ratios (OR) across models (Full, Reduced, Null)
 # make_odds_ratios_graph <- function(ls_model, var1, var2){
 make_odds_ratios_graph <- function(
-  ls_model
-  ){
+    ls_model
+){
   # browser()
 
-  # pal_direction_significance <-  c( # turn on, when absent in environment
-  #   "Increase (99%)"   = "#2b8cbe"
-  #   ,"Increase (95%)"  = "#7bccc4"
-  #   ,"Increase (90%)"  = "#bae4bc"
-  #   ,"Not Significant" = "NA"
-  #   ,"Decrease (90%)"  = "#fdcc8a"
-  #   ,"Decrease (95%)"  = "#fc8d59"
-  #   ,"Decrease (99%)"  = "#d7301f"
-  # )
+  pal_direction_significance <-  c( # turn on, when absent in environment
+    "Increase (99%)"   = "#2b8cbe"
+    ,"Increase (95%)"  = "#7bccc4"
+    ,"Increase (90%)"  = "#bae4bc"
+    ,"Not Significant" = "NA"
+    ,"Decrease (90%)"  = "#fdcc8a"
+    ,"Decrease (95%)"  = "#fc8d59"
+    ,"Decrease (99%)"  = "#d7301f"
+  )
   # Identify components
   l_model <- ls_model$full
   var_focal <- l_model$equation$explanatory[1]
@@ -518,12 +518,12 @@ make_odds_ratios_graph <- function(
 # g
 # View relationship between two categorical variables as a set of bar graphs
 make_bi_contingency_graph_components <- function(
-  d
-  ,var1                # 1st categorical variable - predictor
-  ,var2     = var1     # 2nd categorical variable - outcome
-  ,voption  ="plasma"  # a palette from {viridis} package
-  ,n_breaks = 5       # number of labeled values on horizontal axis
-  ,rev      = TRUE    # reverse the color gradient
+    d
+    ,var1                # 1st categorical variable - predictor
+    ,var2     = var1     # 2nd categorical variable - outcome
+    ,voption  ="plasma"  # a palette from {viridis} package
+    ,n_breaks = 5       # number of labeled values on horizontal axis
+    ,rev      = TRUE    # reverse the color gradient
 ){
   # var1 = "sex"
   # var2 = "ulcer"
@@ -565,9 +565,9 @@ make_bi_contingency_graph_components <- function(
     ggplot2::coord_flip()+
     ggplot2::scale_y_continuous(
       # expand=ggplot2::expansion(mult = c(0,.1))
-      labels = comma
+      labels = scales::comma_format()
       # ,breaks =pretty_breaks()
-      ,breaks = breaks_pretty(n=n_breaks)
+      ,breaks = scales::breaks_pretty(n=n_breaks)
     )
   # g1
   g1 <- g0 +
@@ -598,9 +598,9 @@ make_bi_contingency_graph_components <- function(
   t1$crosstab %>% DescTools::Assocs()
   v_chitest <- t1$crosstab %>% chisq.test() %>% broom::tidy()
   chi_test_result <- paste0(
-    "Chi-Squared = ", comma(v_chitest$statistic, accuracy = .1),
+    "Chi-Squared = ", scales::comma(v_chitest$statistic, accuracy = .1),
     ", df = ", v_chitest$parameter,
-    ", p-value < ", comma(v_chitest$p.value, accuracy = .0001)
+    ", p-value < ", scales::comma(v_chitest$p.value, accuracy = .0001)
   )
   # t1
   index_name <- c(
@@ -671,9 +671,9 @@ make_bi_contingency_graph_components <- function(
 
 
 make_bi_contingency_graph <- function(
-  d
-  , var1
-  , var2
+    d
+    , var1
+    , var2
 ){
   # d <- ds1
   # var1 = "age_group"
@@ -744,11 +744,11 @@ make_bi_contingency_graph <- function(
 # ---- To Rule Them All ---------------
 
 get_bi_test_objects <- function(
-  d
-  ,dependent
-  ,explanatory # the first will be treated as focal
-  ,clear_cache = FALSE
-  ,get_cache = TRUE # load file from disk by default
+    d
+    ,dependent
+    ,explanatory # the first will be treated as focal
+    ,clear_cache = FALSE
+    ,get_cache = TRUE # load file from disk by default
 ){
   # d <- ds2
   # dependent = "has_ea"
@@ -806,144 +806,167 @@ get_bi_test_objects <- function(
 # Produces
 # dto$
 
+# to split the title into 2 lines
+multi_line2 <- function(x){
+  paste0(
+    x %>% substr(1,round(nchar(x)/2))
+    ,"\n"
+    ,x %>% substr(round(nchar(x)/2),nchar(x))
+  )
+}
+
+# split a formula object into two lines
+multi_line2_formula <- function(x){
+  fobject <- x %>% as.character()
+  fstring <- paste0(fobject[2]," ~ ", fobject[3])
+
+  paste0(
+    fstring %>% substr(1,round(nchar(fstring)/2))
+    ,"\n"
+    ,fstring %>% substr(round(nchar(fstring)/2),nchar(fstring))
+  )
+}
+# dto$ls_model$full$equation$formula  %>% multi_line2_formula()
+
+
 make_bi_test_output_A <- function(
     dto # made by get_bi_test_object
     ,d
     ,...
 ){
-    # d <- ds2
-    #Identify components used in display
-    p1 <- dto$ls_bi_graph$stack # horiz bi bar counts
-    p2 <- dto$ls_bi_graph$fill  # horiz bi bar percent
-    p3 <- dto$ls_model %>% make_odds_ratios_graph() # Converted Odds
-    p4 <- dto$ls_bi_graph$measures # Measures of association
-    p5 <- dto$ls_model$full$roc$roc_plot # ROC plot
-    # p6 <- dto$ls_model$compare$estimate_plot
+  # d <- ds2
+  #Identify components used in display
+  p1 <- dto$ls_bi_graph$stack # horiz bi bar counts
+  p2 <- dto$ls_bi_graph$fill  # horiz bi bar percent
+  p3 <- dto$ls_model %>% make_odds_ratios_graph() # Converted Odds
+  p4 <- dto$ls_bi_graph$measures # Measures of association
+  p5 <- dto$ls_model$full$roc$roc_plot # ROC plot
+  # p6 <- dto$ls_model$compare$estimate_plot
 
-    var1 <- dto$ls_crosstab$varnames[["var1"]]
-    var2 <- dto$ls_crosstab$varnames[["var2"]]
-    p7 <- d %>% make_bi_freq_graph(var1, var2,n_breaks = 4)
-    p8 <- d %>% make_bi_freq_graph(var2, var1,n_breaks = 4)
-    # browser()
-    # store the legend to share later
-    legend <- cowplot::get_legend(
-      p1 +
-        # labs(fill="Dependend/Outcome Variable: ")+
-        guides(color = guide_legend(nrow = 1)) +
-        theme(
-          legend.position = "top"
-          ,legend.title = element_text(size = 16)
-
-        )
-    )
-
-    ### - First row of Display A : three horizontal bar-plots
-    ### - Counts + Percent + Change in Odds
-    top_row_effects <- cowplot::plot_grid(
-      p1 +
-        labs(title="Person Count", y = NULL)+
-        theme(
-          legend.position = "none"
-          ,axis.title.y = element_blank()
-          ,plot.title.position = "panel"
-          ,plot.title = element_text(hjust = .5)
-        )
-
-      ,p2 +
-        labs(title="Group Percent", y = NULL)+
-        theme(
-          legend.position = "none"
-          ,axis.text.y = element_blank()
-          ,axis.ticks.y = element_blank()
-          ,plot.title = element_text(hjust = .5)
-        )
-      ,p3 +
-        labs(title="Change in Odds", x = NULL)+
-        theme(
-          legend.position = "none"
-          ,plot.title = element_text(hjust = .5)
-        )
-      # , labels = c('xx', 'yy','dd')
-      , label_size = 12
-      ,nrow =1
-      ,rel_widths = c(.35,.35, .3)
-    )
-    # top_row_effects
-
-
-
-    second_row_performance <- cowplot::plot_grid(
-      plot.new()
-      ,p4 +
-        labs(
-          y = "Measures\nof\nAssociation"
-        )+
-        theme(
-          axis.title.y = element_text(angle = 0,vjust = .5)
-        )
-      ,p5
-      ,nrow = 1
-      ,rel_widths = c(.2,.6,.4)
-    )
-
-    third_row_bi_graphs <- cowplot::plot_grid(
-      p7
-      ,p8
-      ,nrow=1
-      ,rel_widths = c(.5, .5)
-    )
-
-    title_final <- cowplot::ggdraw()+cowplot::draw_label(dto$ls_model$full$equation)
-    caption_final <- cowplot::ggdraw()+cowplot::draw_label(dto$ls_model$compare$test)
-    final_plot <- cowplot::plot_grid(
-      title_final
-      ,legend
-      ,top_row_effects
-      ,second_row_performance
-      ,caption_final
-      ,third_row_bi_graphs
-       ,ncol = 1
-      # rel_heights values control vertical title margins
-      ,rel_heights = c(.1, .1, .5, .6,.2, .7)
-
-    )+
+  var1 <- dto$ls_crosstab$varnames[["var1"]]
+  var2 <- dto$ls_crosstab$varnames[["var2"]]
+  p7 <- d %>% make_bi_freq_graph(var1, var2,n_breaks = 4)
+  p8 <- d %>% make_bi_freq_graph(var2, var1,n_breaks = 4)
+  # browser()
+  # store the legend to share later
+  legend <- cowplot::get_legend(
+    p1 +
+      # labs(fill="Dependend/Outcome Variable: ")+
+      guides(color = guide_legend(nrow = 1)) +
       theme(
-        plot.background =element_rect(fill = "white", color = "white")
+        legend.position = "top"
+        ,legend.title = element_text(size = 16)
+
       )
-    # final_plot
-    # final_plot %>% quick_save(dto$model_name,width = 10, height = 5)
-    ggplot2::ggsave(
-      filename = paste0(dto$model_name,".jpg"),
-      plot     = final_plot,
-      device   = "jpg",
-      path     = prints_folder,
-      width    = 10,
-      height   = 8,
-      # units = "cm",
-      dpi      = 'retina',
-      limitsize = FALSE,
-      ...
+  )
+
+  ### - First row of Display A : three horizontal bar-plots
+  ### - Counts + Percent + Change in Odds
+  top_row_effects <- cowplot::plot_grid(
+    p1 +
+      labs(title="Person Count", y = NULL)+
+      theme(
+        legend.position = "none"
+        ,axis.title.y = element_blank()
+        ,plot.title.position = "panel"
+        ,plot.title = element_text(hjust = .5)
+      )
+
+    ,p2 +
+      labs(title="Group Percent", y = NULL)+
+      theme(
+        legend.position = "none"
+        ,axis.text.y = element_blank()
+        ,axis.ticks.y = element_blank()
+        ,plot.title = element_text(hjust = .5)
+      )
+    ,p3 +
+      labs(title="Change in Odds", x = NULL)+
+      theme(
+        legend.position = "none"
+        ,plot.title = element_text(hjust = .5)
+      )
+    # , labels = c('xx', 'yy','dd')
+    , label_size = 12
+    ,nrow =1
+    ,rel_widths = c(.35,.35, .3)
+  )
+  # top_row_effects
+
+
+
+  second_row_performance <- cowplot::plot_grid(
+    plot.new()
+    ,p4 +
+      labs(
+        y = "Measures\nof\nAssociation"
+      )+
+      theme(
+        axis.title.y = element_text(angle = 0,vjust = .5)
+      )
+    ,p5
+    ,nrow = 1
+    ,rel_widths = c(.2,.6,.4)
+  )
+
+  third_row_bi_graphs <- cowplot::plot_grid(
+    p7
+    ,p8
+    ,nrow=1
+    ,rel_widths = c(.5, .5)
+  )
+  # browser()
+  title_final <- (cowplot::ggdraw()+cowplot::draw_label(dto$ls_model$full$equation))
+  caption_final <- cowplot::ggdraw()+cowplot::draw_label(dto$ls_model$compare$test)
+  final_plot <- cowplot::plot_grid(
+    title_final
+    ,legend
+    ,top_row_effects
+    ,second_row_performance
+    ,caption_final
+    ,third_row_bi_graphs
+    ,ncol = 1
+    # rel_heights values control vertical title margins
+    ,rel_heights = c(.1, .1, .5, .6,.2, .7)
+
+  )+
+    theme(
+      plot.background =element_rect(fill = "white", color = "white")
     )
+  # final_plot
+  # final_plot %>% quick_save(dto$model_name,width = 10, height = 5)
+  ggplot2::ggsave(
+    filename = paste0(dto$model_name,".jpg"),
+    plot     = final_plot,
+    device   = "jpg",
+    path     = prints_folder,
+    width    = 10,
+    height   = 8,
+    # units = "cm",
+    dpi      = 'retina',
+    limitsize = FALSE,
+    ...
+  )
 
-    return(final_plot)
+  return(final_plot)
 
 
 
-  }
+}
 # How to use
 # gA <- dto %>% make_bi_test_output_A()
 
-  make_bi_test_output_B <- function(dto){
-    # browser()
-    table_plot_path <- paste0(prints_folder,dto$model_name,".png" )
-    g_out <-
-      dto$ls_model$compare$table %>%    # build gtsummary table
-      as_gt()              # convert to gt table
-    g_out %>% gt::gtsave(filename = table_plot_path)             # save table as image
-    return(g_out)
-  }
-  # How to use
-  # dto %>% make_bi_test_output_B()
+make_bi_test_output_B <- function(dto){
+  # browser()
+  table_plot_path <- paste0(prints_folder,dto$model_name,".png" )
+  g_out <-
+    dto$ls_model$compare$table %>%    # build gtsummary table
+    gtsummary::as_gt()              # convert to gt table
+  g_out %>% gt::gtsave(filename = table_plot_path)             # save table as image
+  return(g_out)
+}
+# How to use
+# dto %>% make_bi_test_output_B()
 
 
 
