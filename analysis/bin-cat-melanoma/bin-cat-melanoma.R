@@ -123,6 +123,10 @@ explore::describe_all(ds1)
 ds1 %>% explore::describe_all() %>% arrange(unique)
 # contingency table for any any two categorical variables
 ds1 %>% make_bi_freq_table(var1 = "sex", var2 =  "status")
+ds1 %>% make_bi_freq_table(var1 = "sex", var2 =  "status",rows_ids = "person_oid")
+# By default `make_bi_freq_table()` assumes that each row = unique unit to count
+# when that's need to be alterted or verified pass the column with unique id
+
 ds1 %>% make_bi_freq_graph("sex", "status") # wraps around `make_bi_freq_table()`
 # we can change the order to get a different perspective
 ds1 %>% make_bi_freq_graph("status", "sex")
@@ -187,7 +191,7 @@ ls_model_comp <-
   ds1 %>%
   run_logistic_binary_model_comparison(
     dependent = dependent
-    ,explanatory = explanatory
+    ,explanatory = explanatory # the first element is the pivot of comparison
   )
 # there might be warning messages about `sign_direction`, it's a benign error
 # now let's study the components of the produced object
@@ -211,8 +215,6 @@ ls_model_comp$compare$table
 
 
 # ----- function-review-graphing ----------------------
-
-
 ls_model_comp %>%
   make_odds_ratios_graph()
 # Interpretation:
@@ -250,7 +252,8 @@ dto <-
   )
 # there is a lot packed into it, explore it on  your own
 
-# now the top-level wrapper that assembles components into a specific information display
+# now the top-level wrapper that assembles components into
+# a specific information display and prints physical copy to disk.
 g <- dto %>% make_bi_test_output_A(ds1)
 g <- dto %>% make_bi_test_output_B() # saves model comparison table as a graph
 
