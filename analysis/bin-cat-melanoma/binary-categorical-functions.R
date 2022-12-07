@@ -8,6 +8,7 @@ make_bi_freq_table <- function(
     d
     , var1                # 1st categorical variable
     , var2=var1           # 2nd categorical variable
+    , rows_ids = TRUE
 ){
   # browser()
   # d <- ds1 # load the data set before testing the function
@@ -19,12 +20,19 @@ make_bi_freq_table <- function(
     ls_var_names <- ls_var_names[-2]
   }
 
+  if(rows_ids!=TRUE & is.character(rows_ids)){
+    rows_ids_name <- rows_ids
+  }else{
+    rows_ids_name <- "rows_ids_auto"
+  }
+
   d1 <- d %>%
+    mutate(rows_ids_auto = row_number()) %>%
     # dplyr::group_by(.dots = unique(c(var1, var2)))%>% # simpler but depricated
     dplyr::group_by(!!!rlang::syms(ls_var_names)) %>%
     dplyr::summarize(
       row_count = n()
-      ,id_count = n_distinct(person_oid) # counts UNIUQE persons
+      ,id_count = n_distinct(!!rlang::sym(rows_ids_name)) # counts UNIUQE persons
       ,.groups = "keep"
     ) %>%
     dplyr::ungroup() %>%
@@ -95,7 +103,8 @@ make_bi_freq_graph <- function(
   n_total <-  d2 %>% pull(id_count) %>% unique()
 
   g1 <- d2 %>%
-    ggplot2::ggplot(ggplot2::aes_string(x =var1, y = "id_count", fill = var2 ))+
+    # ggplot2::ggplot(ggplot2::aes_string(x =var1, y = "id_count", fill = var2 ))+
+    ggplot2::ggplot(ggplot2::aes(x =!!rlang::sym(var1), y = id_count, fill = !!rlang::sym(var2) ))+
     ggplot2::geom_col(position = ggplot2::position_dodge(), alpha = .7, color = "black")+
     # ggplot2::geom_text(ggplot2::aes(label = n_people),position = ggplot2::position_dodge(.9), vjust = 1.5, color = "white", size = 5 )+
     ggplot2::scale_fill_viridis_d(begin = 0, end = .8, direction = -1, option = voption
@@ -112,11 +121,12 @@ make_bi_freq_graph <- function(
   g1
   if(var1 == var2){
     g1 <- g1 +
-      ggplot2::geom_text(ggplot2::aes_string(label = "var1_pct"),position = ggplot2::position_dodge(.9), hjust = -0.1, color = "black", size = 4)+
+      # ggplot2::geom_text(ggplot2::aes_string(label = "var1_pct"),position = ggplot2::position_dodge(.9), hjust = -0.1, color = "black", size = 4)+
+      ggplot2::geom_text(ggplot2::aes(label = var1_pct),position = ggplot2::position_dodge(.9), hjust = -0.1, color = "black", size = 4)+
       ggplot2::labs(y = "Count", title = paste0("Frequency distribution of (",var1,")"))
   }else{
     g1 <- g1 +
-      ggplot2::geom_text(ggplot2::aes_string(label = "var12_pct"),position = ggplot2::position_dodge(.9)
+      ggplot2::geom_text(ggplot2::aes(label = var12_pct),position = ggplot2::position_dodge(.9)
                          # , vjust = -.5
                          ,hjust = -0.1
                          , color = "black", size = 4)
@@ -483,7 +493,7 @@ make_odds_ratios_graph <- function(
     ) %>%
     ggplot(aes(x=conv_odds, y = value_level, fill = sign_direction ))+
     # ggplot(aes(x=or_prop, y = predictor, fill = sign_direction))+
-    geom_col( color = "black", size = .3)+
+    geom_col( color = "black", linewidth = .3)+
     # coord_flip()+
     scale_fill_manual(values = pal_direction_significance)+
     geom_vline(xintercept = 0,  color = "black")+
@@ -556,7 +566,8 @@ make_bi_contingency_graph_components <- function(
   n_total <-  d2 %>% pull(id_count) %>% sum()
   # browser()
   g0 <- d2 %>%
-    ggplot2::ggplot(ggplot2::aes_string(x =var1, y = "id_count", fill = var2 ))+
+    # ggplot2::ggplot(ggplot2::aes_string(x =var1, y = "id_count", fill = var2 ))+
+    ggplot2::ggplot(ggplot2::aes(x =!!rlang::sym(var1), y = id_count, fill = !!rlang::sym(var2) ))+
     # ggplot2::geom_col(position = ggplot2::position_stack(), alpha = .7, color = "black")+
     # ggplot2::geom_col(position = ggplot2::position_fill(), alpha = .7, color = "black")+
     ggplot2::scale_fill_viridis_d(begin = 0, end = .8, direction = -1, option = voption
